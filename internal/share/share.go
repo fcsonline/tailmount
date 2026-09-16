@@ -112,8 +112,7 @@ func Run(ctx context.Context, o Options) error {
 	addr := srv.TailcatAddr()
 	fmt.Fprintf(o.Out, "sharing %s (%s)\n", dir, mode)
 	fmt.Fprintf(o.Out, "# 🐈 tailmount address: %s\n", addr)
-	fmt.Fprintf(o.Out, "on another machine run:\n  tailmount %s\n", addr)
-	fmt.Fprintf(o.Out, "(mounts at ~/tailmount/%s; pass a directory to choose another place)\n", name)
+	fmt.Fprintf(o.Out, "on another machine run:\n  tailmount %s <empty directory>\n", addr)
 	fmt.Fprintf(o.Out, "press Ctrl-C to stop sharing\n")
 
 	select {

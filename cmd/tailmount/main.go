@@ -25,8 +25,8 @@ const usage = `tailmount shares a directory as a mountable volume over an encryp
 Usage:
   tailmount                            share the current directory (read-write)
   tailmount [--ro] [-v] share [dir]    share a directory
-  tailmount [-v] mount <addr> [dir]    mount a share (dir defaults to ~/tailmount/<name>)
-  tailmount <addr> [dir]               same as "mount"
+  tailmount [-v] mount <addr> <dir>    mount a share on an empty directory
+  tailmount <addr> <dir>               same as "mount"
   tailmount unmount <dir>              unmount a share mounted earlier
   tailmount version                    print the version
 
@@ -83,8 +83,8 @@ func run(args []string) int {
 		if err := fs.Parse(args[1:]); err != nil {
 			return 2
 		}
-		if fs.NArg() < 1 || fs.NArg() > 2 {
-			fmt.Fprintln(os.Stderr, "usage: tailmount mount <addr> [dir]")
+		if fs.NArg() != 2 {
+			fmt.Fprintln(os.Stderr, "usage: tailmount mount <addr> <dir>")
 			return 2
 		}
 		return exit(mount.Run(ctx, mount.Options{Addr: fs.Arg(0), Mountpoint: fs.Arg(1), Verbose: *verbose}))
@@ -97,7 +97,8 @@ func run(args []string) int {
 	default:
 		if strings.HasPrefix(args[0], "tc") && len(args[0]) > 16 {
 			// Most likely a mistyped or truncated address.
-			return exit(mount.Run(ctx, mount.Options{Addr: args[0]}))
+			_, err := tailcat.ParseAddr(tailcat.Addr(args[0]))
+			return exit(fmt.Errorf("%w: %v", mount.ErrBadAddr, err))
 		}
 		fmt.Fprintf(os.Stderr, "unknown command %q\n\n%s", args[0], usage)
 		return 2

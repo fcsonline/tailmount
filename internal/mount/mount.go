@@ -38,7 +38,7 @@ const (
 type Options struct {
 	// Addr is the tailmount address printed by the sharer.
 	Addr string
-	// Mountpoint is where to mount. Empty means ~/tailmount/<share name>.
+	// Mountpoint is the empty directory to mount on. Required.
 	Mountpoint string
 	// Verbose enables tailcat diagnostic logging.
 	Verbose bool
@@ -82,7 +82,7 @@ func Run(ctx context.Context, o Options) error {
 	}
 	readOnly := info.Mode == share.ModeReadOnly
 
-	mp, created, err := prepareMountpoint(o.Mountpoint, info.Name)
+	mp, created, err := prepareMountpoint(o.Mountpoint)
 	if err != nil {
 		return err
 	}
@@ -205,30 +205,14 @@ func proxy(ctx context.Context, ln net.Listener, cl *tailcat.Client, onDialError
 	}
 }
 
-func defaultMountpoint(name string) (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	name = filepath.Base(name)
-	if name == "." || name == ".." || name == string(filepath.Separator) || name == "" {
-		name = "share"
-	}
-	return filepath.Join(home, "tailmount", name), nil
-}
-
 // prepareMountpoint returns the absolute mountpoint and whether this call
 // created it. An existing directory must be empty, not already a mount, and
 // owned by the current user where the platform requires that.
-func prepareMountpoint(mp, name string) (string, bool, error) {
-	var err error
+func prepareMountpoint(mp string) (string, bool, error) {
 	if mp == "" {
-		mp, err = defaultMountpoint(name)
-		if err != nil {
-			return "", false, err
-		}
+		return "", false, errors.New("a mountpoint directory is required")
 	}
-	mp, err = filepath.Abs(mp)
+	mp, err := filepath.Abs(mp)
 	if err != nil {
 		return "", false, err
 	}
@@ -253,7 +237,7 @@ func prepareMountpoint(mp, name string) (string, bool, error) {
 		return "", false, err
 	}
 	if len(entries) > 0 {
-		return "", false, fmt.Errorf("mountpoint %s is not empty (pass an empty directory, or omit it to use ~/tailmount/<name>)", mp)
+		return "", false, fmt.Errorf("mountpoint %s is not empty (pass an empty directory)", mp)
 	}
 	if err := checkOwner(mp, st); err != nil {
 		return "", false, err

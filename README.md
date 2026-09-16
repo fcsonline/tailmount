@@ -38,16 +38,17 @@ tailmount
 sharing /Users/me/project (rw)
 # 🐈 tailmount address: tcpGFwWCB7pg8...
 on another machine run:
-  tailmount tcpGFwWCB7pg8...
+  tailmount tcpGFwWCB7pg8... <empty directory>
 ```
 
 On the machine that mounts:
 
 ```bash
-tailmount tcpGFwWCB7pg8...
+mkdir ~/project-share
+tailmount tcpGFwWCB7pg8... ~/project-share
 ```
 
-The share appears at `~/tailmount/project`. Press Ctrl-C to unmount.
+The share appears at `~/project-share`. Press Ctrl-C to unmount.
 
 ### Commands
 
@@ -56,8 +57,8 @@ The share appears at `~/tailmount/project`. Press Ctrl-C to unmount.
 | `tailmount` | Share the current directory, read-write. |
 | `tailmount --ro` | Share the current directory, read-only. |
 | `tailmount share [dir]` | Share `dir`. Accepts `--ro` and `-v`. |
-| `tailmount <addr> [dir]` | Mount a share at `dir`. Default: `~/tailmount/<name>`. |
-| `tailmount mount <addr> [dir]` | Same as above. |
+| `tailmount <addr> <dir>` | Mount a share on `dir`, an empty directory. |
+| `tailmount mount <addr> <dir>` | Same as above. |
 | `tailmount unmount <dir>` | Unmount a share if the client process is gone. |
 | `tailmount version` | Print the version. |
 
