@@ -90,8 +90,16 @@ directory, it removes it again on unmount.
 - File ownership shows the sharer's numeric uid and gid. Access checks do not
   depend on it; everything the sharer can do, a client can do.
 - Absolute symlinks inside the share resolve on the client's filesystem.
-- Finder writes `.DS_Store` and `._*` files into read-write shares. On a
-  read-only share it shows one "cannot be modified" alert per folder.
+- A Mac client writes `._name` sidecar files (AppleDouble) next to every file
+  it copies in, because NFS has no extended attributes, plus `.DS_Store` from
+  Finder. The sharer hides both from directory listings, so other clients do
+  not see them, but they still exist on the sharer's disk. Run `dot_clean` on
+  the shared directory to fold them away. Copies from a Mac keep working
+  because the data file is written first. One edge case: a macOS client that
+  has just listed a directory answers lookups from that listing, so a hidden
+  sidecar of a file that already existed cannot be opened by name until the
+  directory changes. On a read-only share Finder shows one "cannot be
+  modified" alert per folder.
 - Soft mounts: if the tunnel stalls for a long time, an operation can fail
   with an I/O error instead of blocking forever.
 - Hard links are not supported.

@@ -211,3 +211,49 @@ func TestDirectoryOperations(t *testing.T) {
 		}
 	}
 }
+
+func TestReadDirHidesMacMetadata(t *testing.T) {
+	fs, root, _ := setup(t)
+	for _, name := range []string{"._a.txt", ".DS_Store", "sub/._x", ".hidden-but-normal"} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte("meta"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	names := func(dir string) map[string]bool {
+		infos, err := fs.ReadDir(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		m := map[string]bool{}
+		for _, i := range infos {
+			m[i.Name()] = true
+		}
+		return m
+	}
+	top := names("/")
+	for _, hidden := range []string{"._a.txt", ".DS_Store"} {
+		if top[hidden] {
+			t.Errorf("%s must not be listed", hidden)
+		}
+	}
+	for _, shown := range []string{"a.txt", "sub", ".hidden-but-normal"} {
+		if !top[shown] {
+			t.Errorf("%s must be listed", shown)
+		}
+	}
+	if names("sub")["._x"] {
+		t.Error("._x in a subdirectory must not be listed")
+	}
+	// Still reachable by exact name, so a Mac client can manage its own sidecars.
+	if _, err := fs.Stat("._a.txt"); err != nil {
+		t.Errorf("Stat(._a.txt): %v", err)
+	}
+	f, err := fs.Create("._new")
+	if err != nil {
+		t.Fatalf("Create(._new): %v", err)
+	}
+	f.Close()
+	if err := fs.Remove("._new"); err != nil {
+		t.Errorf("Remove(._new): %v", err)
+	}
+}

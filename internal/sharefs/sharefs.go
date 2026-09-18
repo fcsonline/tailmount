@@ -146,7 +146,8 @@ func (fs *FS) Remove(name string) error {
 	return os.Remove(p)
 }
 
-// ReadDir lists the directory that name resolves to.
+// ReadDir lists the directory that name resolves to, without macOS metadata
+// files (see isMacMetadata).
 func (fs *FS) ReadDir(name string) ([]os.FileInfo, error) {
 	p, err := fs.following(name)
 	if err != nil {
@@ -158,6 +159,9 @@ func (fs *FS) ReadDir(name string) ([]os.FileInfo, error) {
 	}
 	infos := make([]os.FileInfo, 0, len(entries))
 	for _, e := range entries {
+		if isMacMetadata(e.Name()) {
+			continue
+		}
 		info, err := os.Lstat(filepath.Join(p, e.Name()))
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
@@ -168,6 +172,16 @@ func (fs *FS) ReadDir(name string) ([]os.FileInfo, error) {
 		infos = append(infos, info)
 	}
 	return infos, nil
+}
+
+// isMacMetadata reports whether name is a file that macOS creates for its
+// own bookkeeping on filesystems without extended attributes: AppleDouble
+// sidecars that hold another file's metadata, and Finder's view settings.
+// They are hidden from listings so other clients do not see a twin of every
+// file, but they stay reachable by exact name so a Mac client can still read
+// and write its own.
+func isMacMetadata(name string) bool {
+	return strings.HasPrefix(name, "._") || name == ".DS_Store"
 }
 
 // MkdirAll creates the directory that name resolves to and its parents.
